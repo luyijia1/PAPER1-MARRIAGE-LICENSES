@@ -1,0 +1,145 @@
+------
+title: ' Toronto marriage licenses before and after COVID-19 pandemic '
+author: "Yijia Lu"
+date: "06/02/2022"
+abstract: "This report uses data from the Toronto Open Data Collection on marriage licenses issued over the past decade and examines year-to-year trends in marriage and the impact of the COVID-19 pandemic on marriage. The data show a relatively stable number of marriage licenses issued from 2011 to 2020, as counted by Toronto's four municipal centers, but an increase in numbers from 2021 to the present. The reason for this is largely attributed to the high demand for document issuance appointments by the public after the control of the pandemic."
+thanks: "Code and Data are available at: https://github.com/luyijia1/paper1.git"
+output: bookdown::pdf_document2
+toc: FALSE
+bilbiography: mybibfile.bib
+---
+```{r setup, warning=FALSE, message=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+install.packages("opendatatoronto")
+install.packages("lubridate")
+install.packages("tidyverse")
+install.packages("knitr")
+install.packages("dplyr")
+
+library(opendatatoronto)
+library(knitr)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+```
+```{r, load data, warning=FALSE, message=FALSE, echo=FALSE}
+# search data #
+marriage_licence_packages <- search_packages("Marriage Licence Statistics")
+marriage_licence_resources <- marriage_licence_packages %>%
+  list_package_resources()
+
+# Get data #
+monthly_marriage_licenses <- 
+  marriage_licence_resources %>%
+  get_resource()
+
+## SAVE DATA ##
+write_csv(
+  x = monthly_marriage_licenses, 
+  file = "monthly_marriage_licenses.csv"
+  )
+
+```
+
+
+# Introduction
+
+The marriage rate is the ratio of the number of marriages in a given period (usually a year) to the number of people in a given range of population in the same period. Over the years, marriage rates have been declining in most countries around the world. In turn, marriage rates are directly related to fertility rates, and low marriage rates have contributed to the general decline in fertility rates worldwide. Most notably, in the social unrest caused by the COVID-19 pandemic, the extent to which epidemic stress affected romantic relationships did not coincide with the general downward trend. According to 2021 CBC News, Toronto couples struggled to obtain marriage licenses under the restrictions and high demand of the pandemic. the instability in income, employment, or housing stability caused by COVID-19 did not contribute to a continued decline in marriage rates during the epidemic. But the reason for the inaccurate results in the data is the reduction in marriages due to government policies or the closure of administrative locations that may have prevented the certification of marriages. This paper will examine trends in administrative data on marriage licenses from January 2011 to January 2022 to provide a basic picture of changes in marriage rates before and after COVID-19, and thus provide a side-by-side picture of public attitudes toward marriage before and after the epidemic.
+
+# Data and Discussion
+
+This analysis uses the R language (R Core Team (2021)) and incorporates tidyverse wrapping ( Wickham et al., 2019) for the Toronto marriage license administrative data. The administrative data used were downloaded from the open data page of opendatatoronto (Gelfand 2020). dplyr helped me manipulate the data using verbs (Wickham, François, Henry and Müller 2021), while lubridate helped me efficiently and quickly parse datetime data and time span functions (Grolemund and Wickham 2011). Finally, I generated this report directly through knitr compilation (Yihui Xie (2020)).
+
+Toronto's administrative data records for marriage licenses from 2011 until January 2022 include marriages registered at the administrative offices of ET, TO, NY and SC. Figure1 provides statistics on the number of approved projects in each of the four regions. The results are shown in the figure, and the overall figure remains at approximately 330 cases from 2011 to 2020. Most notably, there is a significant increase in 2021 and 2022. The World Health Organization upgraded the 2019 coronavirus epidemic from an epidemic to a global pandemic, indicating that the epidemic has spread widely around the world. As new COVID-19 cases in the city continued to climb, the city chose to take all restrictions imposed to slow the spread of the virus. People were forced to postpone their weddings until the health status of city residents improved. As the city reopened after the start of the outbreak, the City of Toronto resumed issuing marriage licenses by appointment in 2020. This also became the reason for the sudden increase in marriage licenses. The increase in the number of appointments for marriage licenses and demand from residents is relatively clustered in 2021 and 2022 when the epidemic is largely contained.
+
+
+
+
+```{r,group data, warning=FALSE, message=FALSE, echo=FALSE}
+data <- monthly_marriage_licenses %>% 
+  separate(col = TIME_PERIOD, into = c("year", "month"), sep = "-")
+```
+```{r, echo=FALSE}
+month_data <- data %>% group_by(year) %>% 
+  summarize(total =n(),
+            num = sum(MARRIAGE_LICENSES),
+            mean_v = mean(MARRIAGE_LICENSES))
+ggplot(month_data, aes(x =year,y=mean_v)) + 
+  geom_col(color='blue', fill='blue')+
+  labs(x = "Boroughs", y = "Number of approved projects",
+       title = "                        Figure 1: Number of Approved projects ",
+       subtitle = "                                     by Borough (ET/TO/SC/NY)") + 
+  geom_text(aes(label=round(mean_v), y=mean_v+ 5), 
+            position=position_dodge(0.9), vjust=0, angle=45)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+In contrast to Figure 1, Figure 2 compares the average of the marriage license data for each month over a ten-year period. Figure 2 summarizes the data from the municipal centers for each month and plots the increase or decrease in the number of marriage licenses issued for each month with a blue line. We can analyze the seasonal tendencies of Toronto citizens regarding marriage license collection. For example, December, January and February, the winter months, are the periods when relatively few marriage licenses are issued. The average number of marriage licenses issued during these three winter months is about two hundred per month. The peak period for issuing documents, on the other hand, is the summer, and the average peaks in July, when an average of 531 documents are issued, about twice as many as per month in the winter. Summer and fall are relatively popular wedding seasons in Toronto. And in the face of the COVID-19 epidemic, people have had to postpone their plans to get a license for a longer period of time. According to a July 28 update on the Toronto Marriage Services website, marriage licenses will be issued by appointment only as part of the city's COVID-19 response during the second half of the epidemic, in 2021. As a result, the number of marriage licenses issued from August through the end of the year shows a huge drop. However, the trend in the data prior to the outbreak is relatively stable. This is only a projection of the trend for 2021, while 2022 is still unknown.
+
+```{r, echo=FALSE}
+month_data <- data %>% group_by(month) %>% 
+  summarize(total =n(),
+            num = sum(MARRIAGE_LICENSES),
+            mean_v = mean(MARRIAGE_LICENSES))
+ggplot(month_data, aes(x =month,y=mean_v, group=1)) + 
+  geom_line(color='blue',)+
+  labs(x = "Month", y = "Number of marriage licenses",
+       title = "                              Figure 2: Average number by month",
+       subtitle = "   ") + 
+  geom_text(aes(label=round(mean_v), y=mean_v+ 5), 
+            position=position_dodge(0.9), vjust=0, angle=45)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Figure 3 presents data on marriage licenses for municipal centers in different regions and shows the relevant trends according to month. The number of marriage licenses issued changes from stable in the early period to unstable in the later period, while the point of change occurs in the middle of the epidemic. Overall, the black line formed by the purple dots is the highest. Figure 3 provides a stable trend from 2011 to 2019, consistent with Figure 1. The most pronounced decline in the number of marriage licenses issued is in TO, while the decline in ET is relatively mild. Continuing to look at the data for 2021, there is a surge in the number of licenses issued for TO and a gradual increase in the number for NY. However, ET and SC show opposite downward trends. It is possible that TO is located in a more populated area, so the data is more prominent. However, the data for 472 cases in 2022 is only provided by the database of one administrative center in TO, and the licensing data for the other three municipal districts are not available. 2022 data is still in the record and cannot be listed as a reference year.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+new_data <- data %>% 
+  group_by(CIVIC_CENTRE,year ) %>% 
+  summarise(count_ =n(),
+            total_ = sum(MARRIAGE_LICENSES),
+            mean_ = mean(MARRIAGE_LICENSES))
+ggplot(new_data, aes(x=year,y=mean_, color=CIVIC_CENTRE, group=CIVIC_CENTRE) ) + geom_line(color='black', size=1)+geom_point(size=4)+
+  labs(x = "Month", y = "Number of marriage licenses",
+       title = "                            Figure 3: Average number by month",
+       subtitle = "   ") + 
+  geom_text(aes(label=round(mean_), y=mean_+ 5), 
+            position=position_dodge(0.9), vjust=0, angle=45)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+ The results show that the data on marriage document issuance before the epidemic and at the beginning of the epidemic (first year) maintain a relatively stable overall trend. the reason for the decrease in the number of marriage registration certificates issued after 2020 appears in the presence of abnormal records in all records in 2021 and 2022. For example, a normal year should have an average of 48 records. While the overall number of records counted in 2020 and beyond decreases, the total number also decreases correspondingly. Due to the national control of the global epidemic, the government plans policies and controls the opening and closing of public places. The public demand for marriage licenses remains at the same level, but the supply is limited. The next step to make up for the missing data is to broaden the scope of data collection, i.e., not limit it to data on the issuance of marriage licenses in Toronto. When conditions permit, this could be extended to collecting administrative data for the entire province of Ontario or even Canada. Expanding the database would allow for more credible and stable data trends.
+    The missing administrative data is partly attributable to the temporary impact on the availability of marriage licenses in the event of an epidemic (i.e., the closure of government offices). Another implicit and thought-provoking question is whether COVID-19 changed the desire, content, or meaning of marriage for those who did or did not experience it. For example, a sense that "Love cannot wait" and a greater appreciation of the importance of a partner on the journey of life. Or, they may be distracted by the irresistible force of the epidemic and delay marriage. Researchers suggest that the COVID-19 pandemic encompasses the human experience of coexistence: health, policy, ecology, and society (Wagner 2020). It is undeniable that marriage has also been greatly influenced by the COVID-19 pandemic.
+
+\newpage
+
+# References
+1. Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with lubridate. Journal
+  of Statistical Software, 40(3), 1-25. URL https://www.jstatsoft.org/v40/i03/.
+2. Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2021). dplyr: A Grammar of
+  Data Manipulation. https://dplyr.tidyverse.org, https://github.com/tidyverse/dplyr.
+3. Khaja, M. K. (2021, August 7). Toronto couple struggles to get marriage license amid pandemic restrictions, high demand. CBC News. Retrieved February 6, 2022, from https://www.cbc.ca/news/canada/toronto/marriage-license-demand-toronto-vaughan-1.6129218
+4. R Core Team (2021). R: A language and environment for statistical computing. R Foundation
+  for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/
+5. Sharla Gelfand (2020). opendatatoronto: Access the City of Toronto Open Data Portal.
+  https://sharlagelfand.github.io/opendatatoronto/,
+  https://github.com/sharlagelfand/opendatatoronto/.
+6. Toronto, Open Data. 2020. “Marriage license statistics” City of Toronto Open Data Portal. https://open.toronto.ca/dataset/marriage-licence-statistics/ .
+7. Wagner, B. G., Choi, K. H., & Cohen, P. N. (2020). Decline in Marriage Associated with the COVID-19 Pandemic in the United States. Socius: Sociological Research for a Dynamic World, 6, 237802312098032. https://doi.org/10.1177/2378023120980328
+8. Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43),
+  1686, https://doi.org/10.21105/joss.01686
+9. Toronto, Open Data. 2020. “Marriage license statistics” City of Toronto Open Data Portal. https://open.toronto.ca/dataset/marriage-licence-statistics/ .
+10. Yihui Xie (2021). knitr: A General-Purpose Package for Dynamic Report Generation in R. R
+  package version 1.37.
+11. Yihui Xie (2015) Dynamic Documents with R and knitr. 2nd edition. Chapman and Hall/CRC. ISBN
+  978-1498716963
+12. Yihui Xie (2014) knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria
+  Stodden, Friedrich Leisch and Roger D. Peng, editors, Implementing Reproducible
+  Computational Research. Chapman and Hall/CRC. ISBN 978-1466561595
+
+
